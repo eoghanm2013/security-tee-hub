@@ -1,0 +1,159 @@
+# Security TEE Hub - Cursor Rules
+
+## Context
+This workspace is for Technical Escalation Engineers (TEEs) on Datadog's Security Products team. TEEs bridge the gap between Technical Support Engineers (TSEs) and Software Engineers (SWEs). When a TSE is stuck on an issue, they escalate to a TEE who investigates and determines if it's a bug that needs to go to engineering.
+
+## API Access Constraints
+
+### Atlassian (JIRA & Confluence)
+- **READ-ONLY by default** — Never create, update, or comment on JIRA tickets or Confluence pages unless explicitly asked
+- If asked to write, **always confirm** before executing
+- JIRA project key for security escalations: `SCRS`
+- Note: In the SCRS project, the "Issue Type" field is NOT reliable for categorization — focus on actual content (summary, description, labels) instead
+
+### GitHub
+- **READ-ONLY by default** — Never create branches, commits, PRs, issues, or push code unless explicitly asked
+- If asked to write, **always confirm** before executing
+- Use for searching Datadog codebases during investigations
+
+### Slack
+- When asked to check a Slack thread or given a Slack URL (dd.slack.com), **always use Glean search** to find the content
+- Never attempt direct browser access to Slack URLs — they require authentication and won't work
+- Slack messages are indexed in Glean and accessible through search
+
+## Investigation Workflow
+
+When asked to investigate a JIRA ticket:
+
+### Step 1: Fetch the Ticket
+Use MCP to pull the full ticket details including description and comments.
+
+### Step 2: Assess Escalation Quality
+Before diving into research, check if the TSE provided reasonable context:
+- Environment details (tracer version, runtime, OS, hosting method)
+- Relevant logs (actual debug logs, not just "I looked")
+- What was tried and what happened
+- Timestamps for reproduction attempts
+
+**Be balanced** — not every ticket needs every piece of info. Requirements vary by issue complexity. Only flag what's actually needed to make progress.
+
+### Step 3: If Critical Info Missing
+Flag it clearly and provide a practical list of what the TSE should collect. Don't be overly strict — use judgment on what's actually blocking investigation.
+
+### Step 4: If Sufficient Info
+- **First:** Search for similar historical JIRA cases (match by symptoms/patterns, not just keywords)
+- Check if this matches a documented pattern in `/docs/` or previous investigations
+- If pattern found, reference it and adapt the solution
+- **If no pattern:** Search relevant GitHub repos and Confluence docs
+- Create investigation notes in `investigations/SCRS-XXXX/notes.md` and `response.md`
+
+### Step 5: Risk Assessment for Configuration Changes
+Before recommending any configuration changes, **always consider the repercussions**:
+
+**Questions to ask:**
+- What happens if this change breaks the application?
+- Could this cause performance degradation or downtime?
+- Is this a production system with traffic/users?
+- Can this change be easily reverted?
+- Do we have a rollback plan?
+- Is there a safer way to test this hypothesis?
+
+**Red flags:**
+- Reducing resource limits (workers, connections, memory) → may cause capacity issues
+- Changing core process management settings → may impact app availability
+- Modifying security/auth configs → may lock out users
+- Adjusting timeouts too aggressively → may break legitimate long operations
+
+**Better approaches:**
+- Suggest testing in staging/dev first if possible
+- Recommend gradual changes with monitoring
+- Provide rollback instructions upfront
+- When unsure, escalate to engineering instead of guessing
+- Document "what could go wrong" for the TSE/customer
+
+**Lesson from SCRS-1885:** A seemingly logical fix (reducing PHP-FPM workers) caused application performance issues and didn't solve the underlying problem. Production config changes carry real risk.
+
+## Folder Structure
+
+```
+security-tee-hub/
+├── investigations/     # Active investigations (SCRS-XXXX folders)
+│   └── .template/      # Template for new investigations
+├── archive/            # Archived JIRA tickets by month (MM-YYYY/)
+├── docs/               # Internal documentation by product area
+│   ├── appsec/
+│   ├── siem/
+│   ├── cws/
+│   └── ...
+├── reference/          # Reference materials
+└── scripts/            # Utility scripts (jira_client.py, bulk_archive.py)
+```
+
+## Product Areas
+- **AppSec** — Application Security, ASM, WAF, API Security
+- **SIEM** — Cloud SIEM, detection rules, signals
+- **CWS** — Cloud Workload Security, runtime security
+- **CSPM** — Cloud Security Posture Management, misconfigurations
+- **VM** — Vulnerability Management
+- **SCA** — Software Composition Analysis
+- **IAST** — Interactive Application Security Testing
+- **SAST** — Static Application Security Testing
+
+## Tone
+- Be helpful and practical
+- Don't over-engineer solutions
+- When escalation quality is poor, be constructive not harsh
+- Focus on what's needed to make progress
+- **Be cautious with production changes** — always consider what could go wrong
+- When uncertain, recommend escalation over risky experimentation
+
+## Communication Style for TSE Messages
+When creating messages for TSEs to send:
+- **Keep it concise** — Don't make it too long
+- **Sound human** — Don't make it look AI-like (avoid overly formal or flowery language)
+- **Use bold for emphasis** — You can **bolden** important words, but don't make text larger with headers
+- **Be direct** — Get to the point quickly, technical audience doesn't need hand-holding
+
+## Investigation Output Standards
+
+### Brief-First Approach
+When delivering investigation results:
+1. **Start with TL;DR** (3-5 sentences maximum)
+2. **Action items first** — What the TSE needs to do
+3. **Explanation second** — Why this is happening (keep it short)
+4. **Technical details last** — In investigation notes, not TSE messages
+
+### Standardized File Structure
+For each investigation, create ONLY these files:
+- **`notes.md`** — Your detailed technical investigation (exhaustive, for TEE reference)
+- **`response.md`** — Message for TSE to send to customer (concise, actionable, human-sounding)
+- **`assets/`** — Folder for logs, screenshots, flares, etc.
+
+**Do NOT create** multiple variations like `MESSAGE_TO_TSE.md`, `MESSAGE_SHORT.md`, `MESSAGE_BRIEF.md`, `SUMMARY.md`, `INDEX.md`, etc. unless explicitly requested.
+
+### Pattern Recognition Workflow
+**Before diving into deep investigation:**
+1. Search for similar historical JIRA cases first (search by symptoms, not ticket number)
+2. Check if this matches a known pattern from previous investigations
+3. If pattern found, state: "This matches [pattern] from SCRS-XXXX" and reference the solution
+4. Only do full greenfield investigation if no pattern matches
+
+**Build pattern knowledge:**
+- False positive patterns (e.g., linux-headers packages)
+- Common API pagination mistakes (meta.page.after vs links.next)
+- Configuration gaps (missing environment variables)
+- Document these patterns in `/docs/` for future reference
+
+### Risk Callouts (Always Include)
+When recommending configuration changes or actions:
+- **Environment:** Explicitly state prod vs non-prod vs dev
+- **Risk level:** 🟢 LOW / 🟡 MEDIUM / 🔴 HIGH with justification
+- **What could go wrong:** Specific failure scenarios
+- **Rollback plan:** How to undo the change
+- **Testing approach:** Suggest safer validation methods when possible
+
+### Cleanup Practices
+- **Test artifacts:** After validation, offer to remove test logs, scripts, and temporary files
+- **Don't leave clutter:** If you create a test service or scripts for reproduction, clean them up when done
+- **Ask before keeping:** "Should I keep these test files or clean them up?"
+

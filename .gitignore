@@ -1,0 +1,64 @@
+# ============================================
+# SECRETS & CREDENTIALS (NEVER COMMIT)
+# ============================================
+.env
+.env.local
+.env.*.local
+
+# MCP config contains tokens - use .example template
+.cursor/mcp.json
+
+# ============================================
+# SENSITIVE DATA
+# ============================================
+# Archived tickets contain customer data
+archive/
+
+# Active investigations may contain sensitive info
+# Keep .template, ignore actual investigations
+investigations/SCRS-*
+investigations/ZD-*
+
+# Assets (flares, logs, screenshots)
+investigations/**/assets/*
+!investigations/**/assets/.gitkeep
+
+# Internal documentation (Datadog-specific)
+docs/
+reference/
+
+# ============================================
+# SYSTEM & IDE
+# ============================================
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+
+# Node (if web app is built)
+node_modules/
+.next/
+dist/
+build/
+
+# Logs
+*.log
+logs/
+
+# ============================================
+# KEEP THESE (templates & examples)
+# ============================================
+!.env.example
+!.cursor/mcp.json.example
+!investigations/.template/
+!archive/.gitkeep

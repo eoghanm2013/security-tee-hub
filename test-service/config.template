@@ -1,0 +1,20 @@
+# Copy this to .env and add your real API key
+# cp config.template .env
+
+# Datadog Configuration
+DD_API_KEY=your_api_key_here
+DD_SITE=datadoghq.com
+DD_SERVICE=scrs-1913-test
+DD_ENV=testing
+DD_VERSION=1.0.0
+
+# ASM Configuration - Toggle this to test!
+# DD_APPSEC_ENABLED=true
+
+# Remote Configuration
+DD_REMOTE_CONFIGURATION_ENABLED=true
+
+# Debug
+DD_TRACE_DEBUG=true
+DD_TRACE_STARTUP_LOGS=true
+

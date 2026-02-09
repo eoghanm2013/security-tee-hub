@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "glean_default": {
+      "type": "http",
+      "url": "https://YOUR_COMPANY.glean.com/mcp/default"
+    },
+    "atlassian": {
+      "command": "uvx",
+      "args": [
+        "mcp-atlassian",
+        "--jira-url", "https://YOUR_DOMAIN.atlassian.net",
+        "--jira-username", "your.email@company.com",
+        "--jira-token", "YOUR_ATLASSIAN_API_TOKEN",
+        "--confluence-url", "https://YOUR_DOMAIN.atlassian.net/wiki",
+        "--confluence-username", "your.email@company.com",
+        "--confluence-token", "YOUR_ATLASSIAN_API_TOKEN",
+        "--read-only"
+      ]
+    },
+    "github": {
+      "command": "uvx",
+      "args": ["mcp-github"],
+      "env": {
+        "GITHUB_TOKEN": "YOUR_GITHUB_PAT"
+      }
+    }
+  }
+}
