@@ -1161,8 +1161,70 @@ def _extract_last_activity(issue: dict, max_comments: int = 2) -> dict:
     }
 
 
-def _archive_from_issue(issue: dict) -> str:
-    """Write a full JIRA issue to archive/MM-YYYY/. Returns archive path."""
+def _generate_summary_sync(content: str, key: str) -> str:
+    """Generate a short AI summary of an investigation/ticket synchronously.
+
+    Tries whichever LLM provider is available. Returns the summary text,
+    or an empty string if no provider is available or generation fails.
+    """
+    prompt = (
+        "You are summarising a completed security escalation ticket for archival. "
+        "Write a concise TL;DR summary in 3-5 sentences. Cover: what the issue was, "
+        "what the root cause turned out to be, and how it was resolved (or if it was "
+        "sent back / closed without fix). Be direct and factual. Do not use headers "
+        "or bullet points, just a short paragraph."
+    )
+
+    # Truncate content to avoid blowing up context windows
+    max_chars = 8000
+    if len(content) > max_chars:
+        content = content[:max_chars] + "\n\n[...truncated for summary generation]"
+
+    messages = [{"role": "user", "content": f"Summarise this ticket ({key}):\n\n{content}"}]
+
+    # Try Ollama first (local, fast, no API key needed)
+    try:
+        payload = json.dumps({
+            "model": get_chat_provider().get("model", ""),
+            "messages": [{"role": "system", "content": prompt}] + messages,
+            "stream": False,
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            f"{OLLAMA_BASE_URL}/api/chat",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            summary = data.get("message", {}).get("content", "").strip()
+            if summary:
+                return summary
+    except Exception:
+        pass
+
+    # Try Gemini if available
+    if GEMINI_API_KEY:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=GEMINI_API_KEY)
+            model = genai.GenerativeModel(GEMINI_MODEL, system_instruction=prompt)
+            resp = model.generate_content(messages[0]["content"])
+            if resp and resp.text:
+                return resp.text.strip()
+        except Exception:
+            pass
+
+    return ""
+
+
+def _archive_from_issue(issue: dict, local_notes: str = "") -> str:
+    """Write a full JIRA issue to archive/MM-YYYY/. Returns archive path.
+
+    If local_notes is provided, it will be used alongside the JIRA content
+    to generate an AI summary prepended to the archived markdown.
+    """
     try:
         import jira_client as jc
     except Exception as e:
@@ -1183,6 +1245,20 @@ def _archive_from_issue(issue: dict) -> str:
     month_folder.mkdir(parents=True, exist_ok=True)
 
     md = jc.format_issue_markdown(issue)
+
+    # Generate AI summary from JIRA content + local investigation notes
+    summary_input = md
+    if local_notes:
+        summary_input += "\n\n---\n## Local Investigation Notes\n" + local_notes
+    ai_summary = _generate_summary_sync(summary_input, key)
+
+    if ai_summary:
+        # Insert summary block right after the first heading line
+        lines = md.split("\n", 1)
+        heading = lines[0] if lines else f"# {key}"
+        rest = lines[1] if len(lines) > 1 else ""
+        md = f"{heading}\n\n> **AI Summary:** {ai_summary}\n{rest}"
+
     output_path = month_folder / f"{key}.md"
     with open(output_path, "w") as f:
         f.write(md)
@@ -1225,8 +1301,18 @@ def sync_investigations():
 
         if jira_status.lower().strip() in DONE_STATUSES:
             try:
-                archive_path = _archive_from_issue(issue)
+                # Read local investigation notes before deleting the folder
                 inv_dir = INVESTIGATIONS_DIR / key
+                local_notes = ""
+                if inv_dir.exists():
+                    for md_name in ("notes.md", "response.md"):
+                        md_path = inv_dir / md_name
+                        if md_path.exists():
+                            try:
+                                local_notes += f"\n\n### {md_name}\n" + md_path.read_text()
+                            except Exception:
+                                pass
+                archive_path = _archive_from_issue(issue, local_notes=local_notes)
                 if inv_dir.exists():
                     shutil.rmtree(inv_dir)
                 archived.append({
