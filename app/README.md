@@ -3,6 +3,7 @@
 > Local web UI for browsing investigations, archived tickets, and docs. Optional AI chat built in.
 
 ---
+![Uploading image.png…]()
 
 **Quick Start**
 
