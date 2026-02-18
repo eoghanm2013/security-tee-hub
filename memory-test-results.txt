@@ -1,0 +1,4 @@
+# SBOM Memory Consumption Test Results
+# Related to: CONS-8079
+# Date: Tue Feb 17 15:07:11 GMT 2026
+

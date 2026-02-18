@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Docs - TEE Hub{% endblock %}
+
+{% block content %}
+<div class="p-8 max-w-5xl mx-auto animate-in">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white tracking-tight">Documentation</h1>
+        <p class="text-dd-text-dim mt-1 text-sm">Internal docs, runbooks, and troubleshooting guides</p>
+    </div>
+
+    <div class="card overflow-hidden">
+        {% macro render_tree(items, depth=0) %}
+        {% for item in items %}
+        {% if item.type == 'dir' %}
+        <div class="{{ 'border-b border-dd-border/50' if not loop.last else '' }}">
+            <div class="flex items-center gap-2.5 cursor-pointer hover:bg-dd-surface-2/50 transition-colors py-2.5 px-4"
+                 onclick="toggleDir('dir-{{ item.name }}-{{ depth }}')"
+                 style="padding-left: {{ 1 + depth * 1.25 }}rem">
+                <svg id="chevron-dir-{{ item.name }}-{{ depth }}" class="w-3.5 h-3.5 text-dd-text-dim transform transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                <svg class="w-4 h-4 text-dd-amber flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+                <span class="text-sm font-medium text-white capitalize">{{ item.name }}</span>
+                <span class="text-[11px] text-dd-text-dim">{{ item.children|length }}</span>
+            </div>
+            <div id="dir-{{ item.name }}-{{ depth }}" class="hidden">
+                {{ render_tree(item.children, depth + 1) }}
+            </div>
+        </div>
+        {% elif item.type == 'file' %}
+        <a href="/docs/{{ item.path.replace('docs/', '') }}"
+           class="flex items-center gap-2.5 py-2.5 px-4 hover:bg-dd-surface-2/50 transition-colors group {{ 'border-b border-dd-border/50' if not loop.last else '' }}"
+           style="padding-left: {{ 1 + depth * 1.25 + 1.5 }}rem">
+            <svg class="w-4 h-4 text-dd-text-dim group-hover:text-dd-purple-light transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+            <span class="text-sm text-dd-text-muted group-hover:text-white transition-colors">{{ item.name.replace('-', ' ').replace('_', ' ').title() }}</span>
+        </a>
+        {% endif %}
+        {% endfor %}
+        {% endmacro %}
+
+        {{ render_tree(tree) }}
+
+        {% if not tree %}
+        <div class="px-5 py-16 text-center">
+            <div class="w-14 h-14 bg-dd-surface-2 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-dd-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+            </div>
+            <p class="text-sm font-medium text-white mb-1">No documentation files yet</p>
+            <p class="text-xs text-dd-text-dim">Add markdown files to <code class="text-dd-purple-light">docs/</code> to see them here.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function toggleDir(id) {
+        const el = document.getElementById(id);
+        const chevron = document.getElementById('chevron-' + id);
+        el.classList.toggle('hidden');
+        chevron.classList.toggle('rotate-180');
+    }
+</script>
+{% endblock %}

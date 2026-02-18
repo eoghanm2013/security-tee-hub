@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TEE Hub{% endblock %}</title>
+    <!-- Restore theme ASAP to prevent flash -->
+    <script>
+        (function() {
+            var t = localStorage.getItem('tee-theme');
+            if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        })();
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'dd-purple': 'var(--c-purple)',
+                        'dd-purple-light': 'var(--c-purple-light)',
+                        'dd-purple-dark': 'var(--c-purple-dark)',
+                        'dd-purple-glow': 'var(--c-purple-glow)',
+                        'dd-bg': 'var(--c-bg)',
+                        'dd-surface': 'var(--c-surface)',
+                        'dd-surface-2': 'var(--c-surface-2)',
+                        'dd-surface-3': 'var(--c-surface-3)',
+                        'dd-border': 'var(--c-border)',
+                        'dd-border-hover': 'var(--c-border-hover)',
+                        'dd-text': 'var(--c-text)',
+                        'dd-text-muted': 'var(--c-text-muted)',
+                        'dd-text-dim': 'var(--c-text-dim)',
+                        'dd-green': 'var(--c-green)',
+                        'dd-blue': 'var(--c-blue)',
+                        'dd-amber': 'var(--c-amber)',
+                        'dd-red': 'var(--c-red)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* ── Theme Variables ────────────────────────────────────────── */
+        :root {
+            --c-purple: #632CA6;
+            --c-purple-light: #7C3AED;
+            --c-purple-dark: #4C1D95;
+            --c-purple-glow: rgba(124, 58, 237, 0.15);
+            --c-bg: #0C0C16;
+            --c-surface: #13132A;
+            --c-surface-2: #1A1A35;
+            --c-surface-3: #22223D;
+            --c-border: #262650;
+            --c-border-hover: #363670;
+            --c-text: #E2E8F0;
+            --c-text-muted: #8B9CB8;
+            --c-text-dim: #5A6A82;
+            --c-green: #34D399;
+            --c-blue: #60A5FA;
+            --c-amber: #FBBF24;
+            --c-red: #F87171;
+            /* Markdown-specific */
+            --md-text: #C8D1DF;
+            --md-h1: #F1F5F9;
+            --md-h2: #E2E8F0;
+            --md-h3: #CBD5E1;
+            --md-h4: #94A3B8;
+            --md-strong: #F1F5F9;
+            --md-link: #818CF8;
+            --md-link-hover: #A5B4FC;
+            --md-code-bg: #1E1E3A;
+            --md-code-text: #C4B5FD;
+            --md-pre-bg: #0A0A1A;
+            --md-pre-border: #1E1E38;
+            --md-pre-text: #D1D5DB;
+            --md-th-bg: #1A1A35;
+            --md-td-border: #1E1E3A;
+            --md-tr-hover: rgba(26, 26, 53, 0.5);
+            --md-blockquote-bg: rgba(99, 44, 166, 0.05);
+            --md-blockquote-text: #8B9CB8;
+            /* Card / UI */
+            --card-bg: #13132A;
+            --card-border: #262650;
+            --card-hover-border: #363670;
+            --card-glow: rgba(124, 58, 237, 0.15);
+            --chat-user-bg: #1A1A35;
+            --chat-ai-bg: #13132A;
+            --chat-ai-border: #262650;
+            --scrollbar-thumb: #262650;
+            --scrollbar-hover: #363670;
+            --mark-bg: rgba(124, 58, 237, 0.25);
+            --mark-text: #E2E8F0;
+            --sidebar-active-bg: rgba(124, 58, 237, 0.1);
+        }
+        [data-theme="light"] {
+            /* Warm, muted palette -- easy on the eyes */
+            --c-purple: #7C6BBF;
+            --c-purple-light: #6E5BAA;
+            --c-purple-dark: #5A4A8F;
+            --c-purple-glow: rgba(124, 107, 191, 0.08);
+            --c-bg: #FAF9F7;
+            --c-surface: #FFFFFF;
+            --c-surface-2: #F4F3F0;
+            --c-surface-3: #ECEAE6;
+            --c-border: #E2E0DB;
+            --c-border-hover: #D0CDC6;
+            --c-text: #2D2B27;
+            --c-text-muted: #6B6860;
+            --c-text-dim: #A09D96;
+            --c-green: #3D9970;
+            --c-blue: #5B8DB8;
+            --c-amber: #C18D3E;
+            --c-red: #C95B4F;
+            /* Markdown */
+            --md-text: #3A3835;
+            --md-h1: #1F1E1C;
+            --md-h2: #2D2B27;
+            --md-h3: #4A4844;
+            --md-h4: #706D66;
+            --md-strong: #1F1E1C;
+            --md-link: #6E5BAA;
+            --md-link-hover: #5A4A8F;
+            --md-code-bg: #F0EEEB;
+            --md-code-text: #6E5BAA;
+            --md-pre-bg: #F7F6F3;
+            --md-pre-border: #E8E6E1;
+            --md-pre-text: #3A3835;
+            --md-th-bg: #F4F3F0;
+            --md-td-border: #E8E6E1;
+            --md-tr-hover: rgba(45, 43, 39, 0.03);
+            --md-blockquote-bg: rgba(124, 107, 191, 0.04);
+            --md-blockquote-text: #6B6860;
+            /* Card / UI */
+            --card-bg: #FFFFFF;
+            --card-border: #E2E0DB;
+            --card-hover-border: #D0CDC6;
+            --card-glow: rgba(124, 107, 191, 0.06);
+            --chat-user-bg: #F0EEEB;
+            --chat-ai-bg: #FFFFFF;
+            --chat-ai-border: #E2E0DB;
+            --scrollbar-thumb: #D5D2CC;
+            --scrollbar-hover: #C0BDB6;
+            --mark-bg: rgba(124, 107, 191, 0.12);
+            --mark-text: #2D2B27;
+            --sidebar-active-bg: rgba(124, 107, 191, 0.08);
+        }
+    </style>
+    <style>
+        /* ── Typography & Markdown ──────────────────────────────────── */
+        .md-content { color: var(--md-text); font-size: 0.9375rem; line-height: 1.8; }
+        .md-content h1 { font-size: 1.5rem; font-weight: 700; margin: 2rem 0 0.75rem; color: var(--md-h1); letter-spacing: -0.01em; }
+        .md-content h1:first-child { margin-top: 0; }
+        .md-content h2 { font-size: 1.2rem; font-weight: 600; margin: 1.75rem 0 0.5rem; color: var(--md-h2); border-bottom: 1px solid var(--c-border); padding-bottom: 0.35rem; }
+        .md-content h3 { font-size: 1.05rem; font-weight: 600; margin: 1.25rem 0 0.4rem; color: var(--md-h3); }
+        .md-content h4 { font-size: 0.95rem; font-weight: 600; margin: 1rem 0 0.35rem; color: var(--md-h4); text-transform: uppercase; letter-spacing: 0.03em; }
+        .md-content p { margin: 0.6rem 0; }
+        .md-content ul, .md-content ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+        .md-content li { margin: 0.3rem 0; line-height: 1.7; }
+        .md-content ul { list-style-type: disc; }
+        .md-content ol { list-style-type: decimal; }
+        .md-content a { color: var(--md-link); text-decoration: none; border-bottom: 1px solid rgba(129, 140, 248, 0.3); transition: all 0.15s; }
+        .md-content a:hover { color: var(--md-link-hover); border-bottom-color: rgba(165, 180, 252, 0.6); }
+        .md-content code { background: var(--md-code-bg); padding: 0.15rem 0.45rem; border-radius: 5px; font-size: 0.84rem; color: var(--md-code-text); font-family: 'SF Mono', 'Fira Code', monospace; }
+        .md-content pre { background: var(--md-pre-bg); padding: 1.125rem; border-radius: 10px; overflow-x: auto; margin: 1rem 0; border: 1px solid var(--md-pre-border); }
+        .md-content pre code { background: none; padding: 0; color: var(--md-pre-text); font-size: 0.84rem; }
+        .md-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; border-radius: 8px; overflow: hidden; }
+        .md-content th { background: var(--md-th-bg); padding: 0.6rem 0.85rem; text-align: left; border: 1px solid var(--c-border); font-weight: 600; font-size: 0.84rem; color: var(--md-h4); text-transform: uppercase; letter-spacing: 0.04em; }
+        .md-content td { padding: 0.55rem 0.85rem; border: 1px solid var(--md-td-border); font-size: 0.875rem; }
+        .md-content tr:hover td { background: var(--md-tr-hover); }
+        .md-content hr { border-color: var(--c-border); margin: 2rem 0; }
+        .md-content blockquote { border-left: 3px solid var(--c-purple); padding: 0.5rem 0 0.5rem 1.125rem; margin: 1rem 0; color: var(--md-blockquote-text); background: var(--md-blockquote-bg); border-radius: 0 6px 6px 0; }
+        .md-content strong { color: var(--md-strong); font-weight: 600; }
+        .md-content img { max-width: 100%; border-radius: 8px; margin: 1rem 0; }
+
+        /* ── Scrollbar ──────────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+
+        /* ── Search highlight ───────────────────────────────────────── */
+        mark { background: var(--mark-bg); color: var(--mark-text); padding: 0 2px; border-radius: 2px; }
+
+        /* ── Sidebar ────────────────────────────────────────────────── */
+        .sidebar-nav-item { position: relative; transition: all 0.15s ease; }
+        .sidebar-nav-item::before {
+            content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+            width: 3px; height: 0; background: var(--c-purple-light); border-radius: 0 2px 2px 0; transition: height 0.15s ease;
+        }
+        .sidebar-nav-item.active::before { height: 60%; }
+        .sidebar-nav-item.active { background: var(--sidebar-active-bg); color: var(--c-text); }
+
+        /* ── Cards ──────────────────────────────────────────────────── */
+        .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; transition: all 0.2s ease; }
+        .card:hover { border-color: var(--card-hover-border); }
+        .card-glow:hover { box-shadow: 0 0 0 1px var(--card-glow), 0 4px 20px rgba(0,0,0,0.15); }
+
+        /* ── Tabs ───────────────────────────────────────────────────── */
+        .tab-pill { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.84rem; font-weight: 500; color: var(--c-text-muted); transition: all 0.15s ease; cursor: pointer; border: none; background: none; }
+        .tab-pill:hover { color: var(--c-text); background: var(--c-surface-2); }
+        .tab-pill.active { color: var(--c-text); background: var(--c-surface-2); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* ── Badge ──────────────────────────────────────────────────── */
+        .badge { display: inline-flex; align-items: center; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.02em; }
+        .badge-purple { background: rgba(124, 58, 237, 0.15); color: #A78BFA; }
+        .badge-green { background: rgba(52, 211, 153, 0.15); color: #6EE7B7; }
+        .badge-blue { background: rgba(96, 165, 250, 0.15); color: #93C5FD; }
+        .badge-amber { background: rgba(251, 191, 36, 0.15); color: #FCD34D; }
+        .badge-dim { background: rgba(128,128,128,0.1); color: var(--c-text-muted); }
+
+        /* ── Stat card gradients ────────────────────────────────────── */
+        .stat-purple { background: linear-gradient(135deg, rgba(99, 44, 166, 0.12) 0%, rgba(99, 44, 166, 0.03) 100%); }
+        .stat-green { background: linear-gradient(135deg, rgba(52, 211, 153, 0.12) 0%, rgba(52, 211, 153, 0.03) 100%); }
+        .stat-blue { background: linear-gradient(135deg, rgba(96, 165, 250, 0.12) 0%, rgba(96, 165, 250, 0.03) 100%); }
+
+        /* ── Chat panel ─────────────────────────────────────────────── */
+        .chat-panel { transform: translateX(100%); transition: transform 0.25s ease; }
+        .chat-panel.open { transform: translateX(0); }
+        .chat-msg-user { background: var(--chat-user-bg); border-radius: 12px 12px 4px 12px; }
+        .chat-msg-ai { background: var(--chat-ai-bg); border: 1px solid var(--chat-ai-border); border-radius: 12px 12px 12px 4px; }
+        .chat-msg-ai .md-content h1 { font-size: 1.1rem; margin: 0.75rem 0 0.5rem; }
+        .chat-msg-ai .md-content h2 { font-size: 1rem; margin: 0.5rem 0 0.25rem; border: none; padding: 0; }
+        .chat-msg-ai .md-content h3 { font-size: 0.95rem; margin: 0.5rem 0 0.25rem; }
+        .chat-msg-ai .md-content p { margin: 0.35rem 0; font-size: 0.875rem; line-height: 1.6; }
+        .chat-msg-ai .md-content ul, .chat-msg-ai .md-content ol { margin: 0.25rem 0 0.25rem 1.25rem; font-size: 0.875rem; }
+        .chat-msg-ai .md-content li { margin: 0.15rem 0; }
+        .chat-msg-ai .md-content pre { font-size: 0.8rem; padding: 0.75rem; margin: 0.5rem 0; }
+        .chat-msg-ai .md-content table { font-size: 0.8rem; }
+        .chat-msg-ai .md-content th, .chat-msg-ai .md-content td { padding: 0.35rem 0.5rem; }
+
+        /* ── Typing indicator ───────────────────────────────────────── */
+        .typing-dot { animation: typing 1.4s infinite; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-3px); }
+        }
+
+        /* ── Tool usage indicators ──────────────────────────────────── */
+        .tool-indicator { border-left: 2px solid #632CA6; }
+        .tool-indicator.running { border-left-color: #7C3AED; }
+        .tool-indicator.done { border-left-color: #4ade80; opacity: 0.7; }
+        .tool-spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* ── Animations ─────────────────────────────────────────────── */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.25s ease-out; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="h-full bg-dd-bg text-dd-text antialiased">
+    <div class="flex h-full">
+        <!-- Sidebar -->
+        <aside class="w-60 bg-dd-surface border-r border-dd-border flex flex-col flex-shrink-0">
+            <!-- Logo -->
+            <div class="px-4 py-4 border-b border-dd-border">
+                <a href="/" class="flex items-center gap-3 group">
+                    <div class="w-8 h-8 bg-gradient-to-br from-dd-purple to-dd-purple-light rounded-lg flex items-center justify-center shadow-lg shadow-dd-purple/20">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-white text-sm leading-tight">TEE Hub</div>
+                        <div class="text-[11px] text-dd-text-dim leading-tight">Security Escalations</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Search -->
+            <div class="px-3 py-3">
+                <form action="/search" method="GET">
+                    <div class="relative">
+                        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-dd-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <input type="text" name="q" placeholder="Search..."
+                            value="{{ request.args.get('q', '') }}"
+                            class="w-full bg-dd-bg/50 border border-dd-border rounded-lg pl-8 pr-3 py-1.5 text-xs placeholder-dd-text-dim focus:outline-none focus:border-dd-purple/50 focus:ring-1 focus:ring-dd-purple/30 text-dd-text transition-colors">
+                        <kbd class="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-dd-text-dim bg-dd-surface-2 px-1.5 py-0.5 rounded border border-dd-border hidden sm:block">/</kbd>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-1 px-2 pb-2 space-y-0.5 overflow-y-auto">
+                <div class="px-2 pt-1 pb-2">
+                    <span class="text-[10px] font-semibold text-dd-text-dim uppercase tracking-widest">Navigation</span>
+                </div>
+                <a href="/" class="sidebar-nav-item flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm {{ 'active text-white' if request.path == '/' else 'text-dd-text-muted hover:text-white hover:bg-dd-surface-2' }} transition-colors">
+                    <svg class="w-4 h-4 flex-shrink-0 {{ 'text-dd-purple-light' if request.path == '/' else '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    <span class="flex-1">Dashboard</span>
+                </a>
+                <a href="/investigations" class="sidebar-nav-item flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm {{ 'active text-white' if request.path.startswith('/investigation') else 'text-dd-text-muted hover:text-white hover:bg-dd-surface-2' }} transition-colors">
+                    <svg class="w-4 h-4 flex-shrink-0 {{ 'text-dd-purple-light' if request.path.startswith('/investigation') else '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span class="flex-1">Investigations</span>
+                    {% if nav_investigation_count %}
+                    <span class="badge badge-purple">{{ nav_investigation_count }}</span>
+                    {% endif %}
+                </a>
+                <a href="/archive" class="sidebar-nav-item flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm {{ 'active text-white' if request.path.startswith('/archive') else 'text-dd-text-muted hover:text-white hover:bg-dd-surface-2' }} transition-colors">
+                    <svg class="w-4 h-4 flex-shrink-0 {{ 'text-dd-purple-light' if request.path.startswith('/archive') else '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                    <span class="flex-1">Archive</span>
+                    {% if nav_archive_count %}
+                    <span class="badge badge-dim">{{ nav_archive_count }}</span>
+                    {% endif %}
+                </a>
+                <a href="/docs" class="sidebar-nav-item flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm {{ 'active text-white' if request.path.startswith('/doc') else 'text-dd-text-muted hover:text-white hover:bg-dd-surface-2' }} transition-colors">
+                    <svg class="w-4 h-4 flex-shrink-0 {{ 'text-dd-purple-light' if request.path.startswith('/doc') else '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                    <span class="flex-1">Docs</span>
+                    {% if nav_doc_count %}
+                    <span class="badge badge-dim">{{ nav_doc_count }}</span>
+                    {% endif %}
+                </a>
+            </nav>
+
+            <!-- Footer -->
+            <div class="px-3 py-3 border-t border-dd-border">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-[10px] text-dd-text-dim">
+                        <div class="w-1.5 h-1.5 rounded-full bg-dd-green"></div>
+                        <span>Local workspace</span>
+                    </div>
+                    <!-- Theme toggle -->
+                    <button onclick="toggleTheme()" id="theme-toggle"
+                        class="group relative w-9 h-9 rounded-lg flex items-center justify-center text-dd-text-dim hover:text-dd-text-muted hover:bg-dd-surface-2 transition-all"
+                        title="Toggle light/dark mode">
+                        <!-- Sun icon (shown in dark mode) -->
+                        <svg id="theme-icon-sun" class="w-4 h-4 transition-transform group-hover:rotate-45" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                        <!-- Moon icon (shown in light mode) -->
+                        <svg id="theme-icon-moon" class="w-4 h-4 hidden transition-transform group-hover:-rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto" id="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    {% if chat_available %}
+    <!-- Chat Toggle Button -->
+    <button onclick="toggleChat()" id="chat-toggle"
+        class="fixed bottom-6 right-6 w-12 h-12 bg-gradient-to-br from-dd-purple to-dd-purple-light rounded-full shadow-lg shadow-dd-purple/25 flex items-center justify-center hover:shadow-dd-purple/40 hover:scale-105 transition-all z-40 group">
+        <svg id="chat-icon-open" class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        <svg id="chat-icon-close" class="w-5 h-5 text-white hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+
+    <!-- Chat Panel -->
+    <div id="chat-panel" class="chat-panel fixed top-0 right-0 h-full w-[420px] bg-dd-surface border-l border-dd-border z-50 flex flex-col shadow-2xl">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-dd-border flex-shrink-0">
+            <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 bg-gradient-to-br from-dd-purple to-dd-purple-light rounded-lg flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <div>
+                    <span class="text-sm font-semibold text-white">TEE Assistant</span>
+                    <span id="chat-context-badge" class="hidden ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-dd-purple/20 text-dd-purple-light"></span>
+                </div>
+            </div>
+            <div class="flex items-center gap-1">
+                <button onclick="clearChat()" class="p-2 text-dd-text-muted hover:text-white rounded-lg hover:bg-dd-surface-2 transition-colors" title="Clear chat">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+                <button onclick="toggleChat()" class="p-2 text-dd-text-muted hover:text-white rounded-lg hover:bg-dd-surface-2 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- Welcome message -->
+            <div class="text-center py-8" id="chat-welcome">
+                <div class="w-12 h-12 bg-dd-purple/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6 text-dd-purple-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <p class="text-sm font-medium text-white mb-1">TEE Assistant</p>
+                <p class="text-xs text-dd-text-muted max-w-xs mx-auto">
+                    Ask about investigations, get help drafting responses, or discuss escalation patterns. Your .cursorrules are loaded as context.
+                </p>
+                <div class="mt-4 flex flex-wrap justify-center gap-2">
+                    <button onclick="sendQuick('Summarize the current investigation')" class="px-3 py-1.5 text-xs bg-dd-surface-2 border border-dd-border rounded-lg hover:border-dd-purple/50 text-dd-text-muted hover:text-white transition-colors">Summarize this investigation</button>
+                    <button onclick="sendQuick('Draft a response for the TSE')" class="px-3 py-1.5 text-xs bg-dd-surface-2 border border-dd-border rounded-lg hover:border-dd-purple/50 text-dd-text-muted hover:text-white transition-colors">Draft TSE response</button>
+                    <button onclick="sendQuick('What info is missing from this escalation?')" class="px-3 py-1.5 text-xs bg-dd-surface-2 border border-dd-border rounded-lg hover:border-dd-purple/50 text-dd-text-muted hover:text-white transition-colors">Check escalation quality</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input -->
+        <div class="border-t border-dd-border p-3 flex-shrink-0">
+            <form onsubmit="sendMessage(event)" class="flex gap-2">
+                <div class="flex-1 relative">
+                    <textarea id="chat-input" rows="1" placeholder="Ask the TEE Assistant..."
+                        class="w-full bg-dd-bg/50 border border-dd-border rounded-xl px-4 py-2.5 text-sm placeholder-dd-text-dim focus:outline-none focus:border-dd-purple/50 focus:ring-1 focus:ring-dd-purple/30 text-dd-text resize-none transition-colors"
+                        onkeydown="handleChatKey(event)"
+                        oninput="autoResize(this)"></textarea>
+                </div>
+                <button type="submit" id="chat-send-btn"
+                    class="self-end px-3 py-2.5 bg-dd-purple text-white rounded-xl hover:bg-dd-purple-light transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                </button>
+            </form>
+            <div class="mt-2 flex items-center justify-between">
+                <span class="text-[10px] text-dd-text-dim">Shift+Enter for newline</span>
+                <span class="text-[10px] text-dd-text-dim">{{ chat_provider_label }}</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ── Chat State ──────────────────────────────────────────────────────────
+    let chatOpen = false;
+    let chatHistory = [];
+    let isStreaming = false;
+    let investigationContext = "";
+    let currentInvestigationKey = "";
+    let abortController = null;
+
+    // Check if we're on an investigation page and load context
+    (function detectContext() {
+        const path = window.location.pathname;
+        const match = path.match(/^\/investigation\/(.+)$/);
+        if (match) {
+            currentInvestigationKey = match[1];
+            fetch(`/api/chat/context/${currentInvestigationKey}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.context) {
+                        investigationContext = data.context;
+                        const badge = document.getElementById('chat-context-badge');
+                        badge.textContent = currentInvestigationKey;
+                        badge.classList.remove('hidden');
+                    }
+                })
+                .catch(() => {});
+        }
+    })();
+
+    // ── Toggle ──────────────────────────────────────────────────────────────
+    function toggleChat() {
+        chatOpen = !chatOpen;
+        document.getElementById('chat-panel').classList.toggle('open', chatOpen);
+        document.getElementById('chat-icon-open').classList.toggle('hidden', chatOpen);
+        document.getElementById('chat-icon-close').classList.toggle('hidden', !chatOpen);
+        if (chatOpen) {
+            setTimeout(() => document.getElementById('chat-input').focus(), 300);
+        }
+    }
+
+    // ── Clear ───────────────────────────────────────────────────────────────
+    function clearChat() {
+        chatHistory = [];
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = `
+            <div class="text-center py-8" id="chat-welcome">
+                <div class="w-12 h-12 bg-dd-purple/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <svg class="w-6 h-6 text-dd-purple-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <p class="text-sm font-medium text-white mb-1">TEE Assistant</p>
+                <p class="text-xs text-dd-text-muted max-w-xs mx-auto">Chat cleared. Ask anything.</p>
+            </div>`;
+    }
+
+    // ── Send ────────────────────────────────────────────────────────────────
+    function sendQuick(text) {
+        document.getElementById('chat-input').value = text;
+        sendMessage(new Event('submit'));
+    }
+
+    async function sendMessage(e) {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if (!text || isStreaming) return;
+
+        const welcome = document.getElementById('chat-welcome');
+        if (welcome) welcome.remove();
+
+        chatHistory.push({ role: "user", content: text });
+        appendMessage("user", text);
+        input.value = "";
+        input.style.height = "auto";
+
+        isStreaming = true;
+        document.getElementById('chat-send-btn').disabled = true;
+        const aiMsgEl = appendMessage("assistant", "");
+        const toolsEl = aiMsgEl.querySelector('.msg-tools');
+        const contentEl = aiMsgEl.querySelector('.msg-content');
+
+        contentEl.innerHTML = `<div class="flex gap-1 py-1"><span class="typing-dot w-1.5 h-1.5 bg-dd-text-muted rounded-full"></span><span class="typing-dot w-1.5 h-1.5 bg-dd-text-muted rounded-full"></span><span class="typing-dot w-1.5 h-1.5 bg-dd-text-muted rounded-full"></span></div>`;
+
+        let fullText = "";
+        let activeToolEl = null;
+
+        try {
+            abortController = new AbortController();
+            const resp = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    messages: chatHistory.filter(m => m.role !== "pending"),
+                    context: investigationContext,
+                }),
+                signal: abortController.signal,
+            });
+
+            const reader = resp.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                buffer = lines.pop() || "";
+
+                for (const line of lines) {
+                    if (!line.startsWith("data: ")) continue;
+                    try {
+                        const evt = JSON.parse(line.slice(6));
+
+                        if (evt.type === "tool_start") {
+                            const detail = evt.detail ? `: ${escapeHtml(evt.detail)}` : '';
+                            const toolDiv = document.createElement('div');
+                            toolDiv.className = 'tool-indicator running pl-2 py-1 mb-1 flex items-center gap-2 text-xs text-dd-text-muted';
+                            toolDiv.id = `tool-${evt.tool}-${Date.now()}`;
+                            toolDiv.innerHTML = `
+                                <svg class="tool-spinner w-3 h-3 text-dd-purple-light flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                <span>${escapeHtml(evt.label)}${detail}</span>
+                            `;
+                            toolsEl.appendChild(toolDiv);
+                            activeToolEl = toolDiv;
+                            contentEl.innerHTML = '';
+                            scrollChat();
+
+                        } else if (evt.type === "tool_end") {
+                            if (activeToolEl) {
+                                activeToolEl.className = 'tool-indicator done pl-2 py-1 mb-1 flex items-center gap-2 text-xs text-dd-text-muted';
+                                activeToolEl.querySelector('svg').outerHTML = `<svg class="w-3 h-3 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                            }
+                            contentEl.innerHTML = `<div class="flex gap-1 py-1"><span class="typing-dot w-1.5 h-1.5 bg-dd-text-muted rounded-full"></span><span class="typing-dot w-1.5 h-1.5 bg-dd-text-muted rounded-full"></span><span class="typing-dot w-1.5 h-1.5 bg-dd-text-muted rounded-full"></span></div>`;
+
+                        } else if (evt.type === "text") {
+                            fullText += evt.text;
+                            renderMarkdown(contentEl, fullText);
+                            scrollChat();
+
+                        } else if (evt.type === "error") {
+                            contentEl.innerHTML = `<div class="text-red-400 text-sm">${escapeHtml(evt.text)}</div>`;
+                        }
+                    } catch {}
+                }
+            }
+
+            if (fullText) {
+                chatHistory.push({ role: "assistant", content: fullText });
+            }
+        } catch (err) {
+            if (err.name !== "AbortError") {
+                contentEl.innerHTML = `<div class="text-red-400 text-sm">Connection error: ${err.message}</div>`;
+            }
+        } finally {
+            isStreaming = false;
+            abortController = null;
+            document.getElementById('chat-send-btn').disabled = false;
+        }
+    }
+
+    // ── DOM Helpers ─────────────────────────────────────────────────────────
+    function appendMessage(role, content) {
+        const container = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = role === 'user' ? 'flex justify-end animate-in' : 'flex justify-start animate-in';
+
+        const isUser = role === 'user';
+        const bubble = document.createElement('div');
+        bubble.className = isUser
+            ? 'chat-msg-user px-4 py-2.5 max-w-[85%]'
+            : 'chat-msg-ai px-4 py-3 max-w-[90%]';
+
+        if (isUser) {
+            bubble.innerHTML = `<div class="text-sm text-dd-text whitespace-pre-wrap">${escapeHtml(content)}</div>`;
+        } else {
+            bubble.innerHTML = `<div class="msg-tools space-y-0.5 mb-0"></div><div class="msg-content md-content text-sm text-dd-text"></div>`;
+            if (content) {
+                renderMarkdown(bubble.querySelector('.msg-content'), content);
+            }
+        }
+
+        div.appendChild(bubble);
+        container.appendChild(div);
+        scrollChat();
+        return div;
+    }
+
+    function renderMarkdown(el, text) {
+        if (typeof marked !== 'undefined') {
+            marked.setOptions({ breaks: true, gfm: true, highlight: null });
+            el.innerHTML = marked.parse(text);
+        } else {
+            el.innerHTML = `<div class="whitespace-pre-wrap">${escapeHtml(text)}</div>`;
+        }
+    }
+
+    function scrollChat() {
+        const container = document.getElementById('chat-messages');
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+    }
+
+    function handleChatKey(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage(e);
+        }
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === '.') {
+            e.preventDefault();
+            toggleChat();
+        }
+        // Focus search with /
+        if (e.key === '/' && !e.metaKey && !e.ctrlKey && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            document.querySelector('aside input[name="q"]').focus();
+        }
+    });
+    </script>
+    {% else %}
+    <!-- Chat not available -->
+    <div class="fixed bottom-6 right-6 z-40">
+        <button onclick="this.nextElementSibling.classList.toggle('hidden')"
+            class="w-12 h-12 bg-dd-surface-2 border border-dd-border rounded-full shadow-lg flex items-center justify-center hover:border-dd-purple/50 transition-all group">
+            <svg class="w-5 h-5 text-dd-text-dim group-hover:text-dd-purple-light" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        </button>
+        <div class="hidden absolute bottom-14 right-0 bg-dd-surface border border-dd-border rounded-xl p-4 shadow-xl w-72">
+            <p class="text-sm text-white font-medium mb-2">Chat unavailable</p>
+            <p class="text-xs text-dd-text-muted mb-3">Add a free Gemini API key to enable AI chat with JIRA/search tools:</p>
+            <div class="space-y-1.5 mb-2">
+                <p class="text-[10px] text-dd-text-muted">1. Get a key at <a href="https://aistudio.google.com/apikey" target="_blank" class="text-dd-purple-light underline">aistudio.google.com/apikey</a></p>
+                <p class="text-[10px] text-dd-text-muted">2. Add to <code class="text-dd-purple-light">.env</code>:</p>
+                <code class="text-xs text-dd-purple-light bg-dd-bg px-2 py-1 rounded block">GEMINI_API_KEY=your-key</code>
+                <p class="text-[10px] text-dd-text-muted">3. Restart TEE Hub</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Theme Toggle Logic -->
+    <script>
+    function toggleTheme() {
+        const html = document.documentElement;
+        const isLight = html.getAttribute('data-theme') === 'light';
+        if (isLight) {
+            html.removeAttribute('data-theme');
+            localStorage.setItem('tee-theme', 'dark');
+        } else {
+            html.setAttribute('data-theme', 'light');
+            localStorage.setItem('tee-theme', 'light');
+        }
+        updateThemeIcons();
+    }
+
+    function updateThemeIcons() {
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        const sun = document.getElementById('theme-icon-sun');
+        const moon = document.getElementById('theme-icon-moon');
+        if (sun && moon) {
+            sun.classList.toggle('hidden', isLight);
+            moon.classList.toggle('hidden', !isLight);
+        }
+    }
+
+    // Set icons on load
+    updateThemeIcons();
+    </script>
+</body>
+</html>

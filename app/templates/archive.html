@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block title %}Archive - TEE Hub{% endblock %}
+
+{% block content %}
+<style>
+    /* Threat Management */
+    .area-color-siem { --ac: 139, 92, 246; }                /* purple */
+    .area-color-aap { --ac: 59, 130, 246; }                 /* blue */
+    .area-color-workload_protection { --ac: 245, 158, 11; } /* amber */
+    /* Cloud Security */
+    .area-color-cspm { --ac: 16, 185, 129; }                /* green */
+    .area-color-vm { --ac: 236, 72, 153; }                  /* pink */
+    .area-color-ciem { --ac: 20, 184, 166; }                /* teal */
+    /* Code Security */
+    .area-color-sast { --ac: 14, 165, 233; }                /* sky */
+    .area-color-sca { --ac: 99, 102, 241; }                 /* indigo */
+    .area-color-iast { --ac: 139, 92, 246; }                /* violet */
+    .area-color-other { --ac: 107, 114, 128; }              /* gray */
+
+    .area-badge {
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+        padding: 2px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+        background: rgba(var(--ac), 0.12);
+        color: rgba(var(--ac), 1);
+        border: 1px solid rgba(var(--ac), 0.2);
+    }
+    .area-dot {
+        width: 6px; height: 6px; border-radius: 50%;
+        background: rgba(var(--ac), 1);
+    }
+</style>
+
+<div class="p-8 max-w-6xl mx-auto animate-in">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Archive</h1>
+            <p class="text-dd-text-dim mt-1 text-sm" id="archive-count">{{ months|sum(attribute='count') }} archived tickets across {{ months|length }} month{{ 's' if months|length != 1 }}</p>
+        </div>
+        <!-- View toggle -->
+        <div class="flex items-center gap-1 bg-dd-surface rounded-xl p-1 border border-dd-border">
+            <button onclick="setView('month')" data-view-btn="month" class="tab-pill active text-xs py-1 px-2.5">By Month</button>
+            <button onclick="setView('area')" data-view-btn="area" class="tab-pill text-xs py-1 px-2.5">By Product Area</button>
+        </div>
+    </div>
+
+    {% if months %}
+    <!-- Product Area Filter -->
+    <div class="card p-3 mb-6">
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-[10px] font-semibold text-dd-text-dim uppercase tracking-wider mr-1">Filter</span>
+            <button onclick="filterArea('all')" data-area-filter="all" class="area-filter-btn tab-pill active text-xs py-1 px-2.5">All</button>
+            {% for area_key in area_order %}
+            <button onclick="filterArea('{{ area_key }}')" data-area-filter="{{ area_key }}" class="area-filter-btn tab-pill text-xs py-1 px-2.5">
+                <span class="flex items-center gap-1.5 area-color-{{ area_key }}">
+                    <span class="area-dot"></span>
+                    {{ area_labels[area_key] }}
+                </span>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ====== BY-MONTH VIEW ====== -->
+    <div id="view-month" class="space-y-4">
+        {% for month in months %}
+        <div class="card overflow-hidden month-card">
+            <div class="px-5 py-3.5 border-b border-dd-border flex items-center justify-between cursor-pointer hover:bg-dd-surface-2/30 transition-colors" onclick="toggleMonth('month-{{ loop.index }}')">
+                <div class="flex items-center gap-3">
+                    <svg id="chevron-month-{{ loop.index }}" class="w-4 h-4 text-dd-text-dim transform transition-transform {{ 'rotate-180' if loop.first else '' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    <h2 class="text-sm font-semibold text-white">{{ month.name }}</h2>
+                </div>
+                <span class="badge badge-dim month-count" data-total="{{ month.count }}">{{ month.count }} ticket{{ 's' if month.count != 1 }}</span>
+            </div>
+            <div id="month-{{ loop.index }}" class="divide-y divide-dd-border/50 {{ '' if loop.first else 'hidden' }}">
+                {% for ticket in month.tickets %}
+                <a href="/archive/{{ month.name }}/{{ ticket.key }}"
+                   class="archive-ticket-row block px-5 py-2.5 hover:bg-dd-surface-2/50 transition-colors group"
+                   data-area="{{ ticket.product_area }}">
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="text-sm font-mono font-medium text-dd-purple-light group-hover:text-white transition-colors flex-shrink-0">{{ ticket.key }}</span>
+                            <span class="area-badge area-color-{{ ticket.product_area }}">{{ area_labels[ticket.product_area] }}</span>
+                            <span class="text-sm text-dd-text-muted truncate">{{ ticket.title }}</span>
+                        </div>
+                        <svg class="w-4 h-4 text-dd-text-dim group-hover:text-dd-purple-light transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- ====== BY-PRODUCT-AREA VIEW ====== -->
+    <div id="view-area" class="space-y-4 hidden">
+        {% for area_key in area_order %}
+        {% set area_tickets = [] %}
+        {% for month in months %}
+            {% for ticket in month.tickets %}
+                {% if ticket.product_area == area_key %}
+                    {% if area_tickets.append({"key": ticket.key, "title": ticket.title, "month": month.name}) %}{% endif %}
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+        {% if area_tickets %}
+        <div class="card overflow-hidden area-group-card" data-area-group="{{ area_key }}">
+            <div class="px-5 py-3.5 border-b border-dd-border flex items-center justify-between cursor-pointer hover:bg-dd-surface-2/30 transition-colors" onclick="toggleArea('area-group-{{ area_key }}')">
+                <div class="flex items-center gap-3">
+                    <svg id="chevron-area-group-{{ area_key }}" class="w-4 h-4 text-dd-text-dim transform transition-transform rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    <div class="flex items-center gap-2 area-color-{{ area_key }}">
+                        <span class="area-dot"></span>
+                        <h2 class="text-sm font-semibold text-white">{{ area_labels[area_key] }}</h2>
+                    </div>
+                </div>
+                <span class="badge badge-dim">{{ area_tickets|length }} ticket{{ 's' if area_tickets|length != 1 }}</span>
+            </div>
+            <div id="area-group-{{ area_key }}" class="divide-y divide-dd-border/50">
+                {% for ticket in area_tickets %}
+                <a href="/archive/{{ ticket.month }}/{{ ticket.key }}" class="block px-5 py-2.5 hover:bg-dd-surface-2/50 transition-colors group">
+                    <div class="flex items-center justify-between gap-4">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="text-sm font-mono font-medium text-dd-purple-light group-hover:text-white transition-colors flex-shrink-0">{{ ticket.key }}</span>
+                            <span class="text-sm text-dd-text-muted truncate">{{ ticket.title }}</span>
+                        </div>
+                        <div class="flex items-center gap-3 flex-shrink-0">
+                            <span class="text-[11px] text-dd-text-dim">{{ ticket.month }}</span>
+                            <svg class="w-4 h-4 text-dd-text-dim group-hover:text-dd-purple-light transition-colors opacity-0 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Empty filter state -->
+    <div id="empty-filter" class="hidden text-center py-16">
+        <div class="w-14 h-14 bg-dd-surface-2 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-7 h-7 text-dd-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+        </div>
+        <p class="text-sm font-medium text-white mb-1">No tickets match this filter</p>
+        <p class="text-xs text-dd-text-dim">Try selecting a different product area.</p>
+    </div>
+
+    {% else %}
+    <div class="text-center py-20">
+        <div class="w-14 h-14 bg-dd-surface-2 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-7 h-7 text-dd-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+        </div>
+        <p class="text-sm font-medium text-white mb-1">No archived tickets</p>
+        <p class="text-xs text-dd-text-dim">Use <code class="text-dd-purple-light">python scripts/bulk_archive.py</code> to archive JIRA tickets.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    let currentView = 'month';
+    let activeArea = 'all';
+
+    function setView(view) {
+        currentView = view;
+        document.querySelectorAll('[data-view-btn]').forEach(b => b.classList.remove('active'));
+        document.querySelector(`[data-view-btn="${view}"]`).classList.add('active');
+        document.getElementById('view-month').classList.toggle('hidden', view !== 'month');
+        document.getElementById('view-area').classList.toggle('hidden', view !== 'area');
+        applyAreaFilter();
+    }
+
+    function filterArea(area) {
+        activeArea = area;
+        document.querySelectorAll('.area-filter-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`[data-area-filter="${area}"]`).classList.add('active');
+        applyAreaFilter();
+    }
+
+    function applyAreaFilter() {
+        if (currentView === 'month') {
+            // Filter rows inside each month card
+            let totalVisible = 0;
+            document.querySelectorAll('.month-card').forEach(card => {
+                const rows = card.querySelectorAll('.archive-ticket-row');
+                let monthVisible = 0;
+                rows.forEach(row => {
+                    const show = activeArea === 'all' || row.dataset.area === activeArea;
+                    row.style.display = show ? '' : 'none';
+                    if (show) monthVisible++;
+                });
+                // Hide entire month card if no tickets match
+                card.style.display = monthVisible > 0 ? '' : 'none';
+                // Update count badge
+                const countEl = card.querySelector('.month-count');
+                if (countEl) {
+                    const total = parseInt(countEl.dataset.total);
+                    if (activeArea === 'all') {
+                        countEl.textContent = `${total} ticket${total !== 1 ? 's' : ''}`;
+                    } else {
+                        countEl.textContent = `${monthVisible} of ${total}`;
+                    }
+                }
+                totalVisible += monthVisible;
+            });
+            document.getElementById('empty-filter').classList.toggle('hidden', totalVisible > 0);
+            document.getElementById('view-month').classList.toggle('hidden', totalVisible === 0);
+
+        } else {
+            // Filter area group cards
+            let totalVisible = 0;
+            document.querySelectorAll('.area-group-card').forEach(card => {
+                const show = activeArea === 'all' || card.dataset.areaGroup === activeArea;
+                card.style.display = show ? '' : 'none';
+                if (show) totalVisible++;
+            });
+            document.getElementById('empty-filter').classList.toggle('hidden', totalVisible > 0);
+            document.getElementById('view-area').classList.toggle('hidden', totalVisible === 0);
+        }
+    }
+
+    function toggleMonth(id) {
+        const el = document.getElementById(id);
+        const chevron = document.getElementById('chevron-' + id);
+        el.classList.toggle('hidden');
+        chevron.classList.toggle('rotate-180');
+    }
+
+    function toggleArea(id) {
+        const el = document.getElementById(id);
+        const chevron = document.getElementById('chevron-' + id);
+        el.classList.toggle('hidden');
+        chevron.classList.toggle('rotate-180');
+    }
+</script>
+{% endblock %}

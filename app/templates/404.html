@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Not Found - TEE Hub{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-center h-full">
+    <div class="text-center animate-in">
+        <div class="text-7xl font-bold text-dd-purple/20 mb-4 tabular-nums">404</div>
+        <h1 class="text-lg font-semibold text-white mb-2">Page not found</h1>
+        <p class="text-sm text-dd-text-dim mb-8">The file or investigation you're looking for doesn't exist.</p>
+        <a href="/" class="inline-flex items-center gap-2 px-4 py-2.5 bg-dd-purple text-white rounded-lg hover:bg-dd-purple-light transition-colors text-sm font-medium">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

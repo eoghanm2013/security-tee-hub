@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+{% block title %}Investigations - TEE Hub{% endblock %}
+
+{% block content %}
+<div class="p-8 max-w-6xl mx-auto animate-in">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-white tracking-tight">Investigations</h1>
+            <p class="text-dd-text-dim mt-1 text-sm" id="results-count">{{ investigations|length }} investigation{{ 's' if investigations|length != 1 }}</p>
+        </div>
+        <button onclick="runSync()" id="sync-btn"
+            class="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium text-dd-text-muted hover:text-white bg-dd-surface-2 hover:bg-dd-surface-3 border border-dd-border rounded-lg transition-colors">
+            <svg id="sync-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            Sync with JIRA
+        </button>
+    </div>
+
+    <!-- Sync Results Banner (hidden by default) -->
+    <div id="sync-banner" class="hidden mb-6 card p-4 border-l-4 border-dd-green">
+        <div class="flex items-start justify-between">
+            <div id="sync-results" class="text-sm"></div>
+            <button onclick="document.getElementById('sync-banner').classList.add('hidden')" class="text-dd-text-dim hover:text-white ml-4 flex-shrink-0">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+    </div>
+
+    {% if investigations %}
+    <!-- Filter Bar -->
+    <div class="card p-3 mb-6">
+        <div class="flex flex-wrap items-center gap-4">
+            <!-- Status Filter -->
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-semibold text-dd-text-dim uppercase tracking-wider mr-1">Status</span>
+                <button onclick="filterStatus('all')" data-status-filter="all" class="status-filter-btn tab-pill active text-xs py-1 px-2.5">All</button>
+                <button onclick="filterStatus('investigating')" data-status-filter="investigating" class="status-filter-btn tab-pill text-xs py-1 px-2.5">
+                    <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-dd-purple-light"></span>Investigating</span>
+                </button>
+                <button onclick="filterStatus('waiting')" data-status-filter="waiting" class="status-filter-btn tab-pill text-xs py-1 px-2.5">
+                    <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-dd-amber"></span>Waiting</span>
+                </button>
+                <button onclick="filterStatus('escalated')" data-status-filter="escalated" class="status-filter-btn tab-pill text-xs py-1 px-2.5">
+                    <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-dd-blue"></span>Escalated</span>
+                </button>
+                <button onclick="filterStatus('done')" data-status-filter="done" class="status-filter-btn tab-pill text-xs py-1 px-2.5">
+                    <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-dd-green"></span>Done</span>
+                </button>
+            </div>
+
+            {% if product_areas and product_areas|length > 1 %}
+            <div class="w-px h-5 bg-dd-border"></div>
+
+            <!-- Product Area Filter -->
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-semibold text-dd-text-dim uppercase tracking-wider mr-1">Area</span>
+                <button onclick="filterArea('all')" data-area-filter="all" class="area-filter-btn tab-pill active text-xs py-1 px-2.5">All</button>
+                {% for area in product_areas %}
+                <button onclick="filterArea('{{ area }}')" data-area-filter="{{ area }}" class="area-filter-btn tab-pill text-xs py-1 px-2.5">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0
+                            {% if area == 'siem' %}bg-purple-400
+                            {% elif area == 'aap' %}bg-blue-400
+                            {% elif area == 'workload_protection' %}bg-amber-400
+                            {% elif area == 'cspm' %}bg-emerald-400
+                            {% elif area == 'vm' %}bg-pink-400
+                            {% elif area == 'ciem' %}bg-teal-400
+                            {% elif area == 'sast' %}bg-sky-400
+                            {% elif area == 'sca' %}bg-indigo-400
+                            {% elif area == 'iast' %}bg-violet-400
+                            {% else %}bg-dd-text-dim
+                            {% endif %}"></span>{{ area_labels.get(area, area|capitalize) }}</span>
+                </button>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if assignees %}
+            <div class="w-px h-5 bg-dd-border"></div>
+
+            <!-- Assignee Filter -->
+            <div class="flex items-center gap-2">
+                <span class="text-[10px] font-semibold text-dd-text-dim uppercase tracking-wider mr-1">Assignee</span>
+                <button onclick="filterAssignee('all')" data-assignee-filter="all" class="assignee-filter-btn tab-pill active text-xs py-1 px-2.5">All</button>
+                {% for a in assignees %}
+                <button onclick="filterAssignee('{{ a }}')" data-assignee-filter="{{ a }}" class="assignee-filter-btn tab-pill text-xs py-1 px-2.5">{{ a }}</button>
+                {% endfor %}
+                <button onclick="filterAssignee('')" data-assignee-filter="" class="assignee-filter-btn tab-pill text-xs py-1 px-2.5">Unassigned</button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="inv-grid">
+        {% for inv in investigations %}
+        <a href="/investigation/{{ inv.key }}"
+           class="inv-card card card-glow p-5 group block"
+           data-status="{{ inv.status }}"
+           data-assignee="{{ inv.assignee }}"
+           data-area="{{ inv.product_area }}">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap mb-1.5">
+                        <span class="text-base font-mono font-bold text-dd-purple-light group-hover:text-white transition-colors">{{ inv.key }}</span>
+                        <!-- Status dot -->
+                        <span class="w-2 h-2 rounded-full flex-shrink-0
+                            {% if inv.status == 'investigating' %}bg-dd-purple-light
+                            {% elif inv.status == 'waiting' %}bg-dd-amber
+                            {% elif inv.status == 'escalated' %}bg-dd-blue
+                            {% elif inv.status == 'done' %}bg-dd-green
+                            {% endif %}" title="{{ status_labels.get(inv.status, inv.status) }}"></span>
+                        {% if inv.product_area and inv.product_area != 'other' %}
+                        <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full
+                            {% if inv.product_area == 'siem' %}bg-purple-500/15 text-purple-400 border border-purple-500/20
+                            {% elif inv.product_area == 'aap' %}bg-blue-500/15 text-blue-400 border border-blue-500/20
+                            {% elif inv.product_area == 'workload_protection' %}bg-amber-500/15 text-amber-400 border border-amber-500/20
+                            {% elif inv.product_area == 'cspm' %}bg-emerald-500/15 text-emerald-400 border border-emerald-500/20
+                            {% elif inv.product_area == 'vm' %}bg-pink-500/15 text-pink-400 border border-pink-500/20
+                            {% elif inv.product_area == 'ciem' %}bg-teal-500/15 text-teal-400 border border-teal-500/20
+                            {% elif inv.product_area == 'sast' %}bg-sky-500/15 text-sky-400 border border-sky-500/20
+                            {% elif inv.product_area == 'sca' %}bg-indigo-500/15 text-indigo-400 border border-indigo-500/20
+                            {% elif inv.product_area == 'iast' %}bg-violet-500/15 text-violet-400 border border-violet-500/20
+                            {% endif %}">{{ area_labels.get(inv.product_area, inv.product_area) }}</span>
+                        {% endif %}
+                        {% if inv.has_response %}
+                        <span class="badge badge-green">response</span>
+                        {% elif inv.has_notes %}
+                        <span class="badge badge-blue">notes</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-sm text-dd-text-muted leading-snug line-clamp-2">{{ inv.title }}</div>
+                </div>
+                <svg class="w-5 h-5 text-dd-text-dim group-hover:text-dd-purple-light transition-colors mt-0.5 flex-shrink-0 opacity-0 group-hover:opacity-100" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </div>
+            <div class="flex items-center gap-3 mt-3 pt-3 border-t border-dd-border/50">
+                {% if inv.assignee %}
+                <div class="flex items-center gap-1.5 text-xs text-dd-text-dim">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    {{ inv.assignee }}
+                </div>
+                {% endif %}
+                <div class="flex items-center gap-1.5 text-xs text-dd-text-dim">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    {{ inv.file_count }} file{{ 's' if inv.file_count != 1 }}
+                </div>
+                {% if inv.last_modified %}
+                <div class="flex items-center gap-1.5 text-xs text-dd-text-dim">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    {{ inv.last_modified.strftime('%b %d, %Y') }}
+                </div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Empty filter state -->
+    <div id="empty-filter" class="hidden text-center py-16">
+        <div class="w-14 h-14 bg-dd-surface-2 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-7 h-7 text-dd-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+        </div>
+        <p class="text-sm font-medium text-white mb-1">No matching investigations</p>
+        <p class="text-xs text-dd-text-dim">Try adjusting your filters.</p>
+    </div>
+
+    {% else %}
+    <div class="text-center py-20">
+        <div class="w-14 h-14 bg-dd-surface-2 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg class="w-7 h-7 text-dd-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+        <p class="text-sm font-medium text-white mb-1">No active investigations</p>
+        <p class="text-xs text-dd-text-dim">Investigations will appear here when you create folders in <code class="text-dd-purple-light">investigations/</code></p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    let activeStatus = 'all';
+    let activeAssignee = 'all';
+    let activeArea = 'all';
+
+    function filterStatus(status) {
+        activeStatus = status;
+        document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`[data-status-filter="${status}"]`).classList.add('active');
+        applyFilters();
+    }
+
+    function filterAssignee(assignee) {
+        activeAssignee = assignee;
+        document.querySelectorAll('.assignee-filter-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`[data-assignee-filter="${assignee}"]`).classList.add('active');
+        applyFilters();
+    }
+
+    function filterArea(area) {
+        activeArea = area;
+        document.querySelectorAll('.area-filter-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`[data-area-filter="${area}"]`).classList.add('active');
+        applyFilters();
+    }
+
+    function applyFilters() {
+        const cards = document.querySelectorAll('.inv-card');
+        let visible = 0;
+        cards.forEach(card => {
+            const status = card.dataset.status;
+            const assignee = card.dataset.assignee;
+            const area = card.dataset.area;
+            const statusMatch = activeStatus === 'all' || status === activeStatus;
+            const assigneeMatch = activeAssignee === 'all' || assignee === activeAssignee;
+            const areaMatch = activeArea === 'all' || area === activeArea;
+            const show = statusMatch && assigneeMatch && areaMatch;
+            card.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        // Update count
+        const total = cards.length;
+        const countEl = document.getElementById('results-count');
+        const anyFilter = activeStatus !== 'all' || activeAssignee !== 'all' || activeArea !== 'all';
+        if (!anyFilter) {
+            countEl.textContent = `${total} investigation${total !== 1 ? 's' : ''}`;
+        } else {
+            countEl.textContent = `Showing ${visible} of ${total} investigation${total !== 1 ? 's' : ''}`;
+        }
+
+        // Show/hide empty state
+        document.getElementById('empty-filter').classList.toggle('hidden', visible > 0);
+        document.getElementById('inv-grid').classList.toggle('hidden', visible === 0);
+    }
+
+    // ── Helpers ──
+    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    function renderTicketCard(t, isDone) {
+        const statusColor = isDone ? 'text-dd-green' : 'text-dd-amber';
+        const statusBg = isDone ? 'bg-dd-green/10' : 'bg-dd-amber/10';
+        let html = `<div class="rounded-lg border border-dd-border/60 bg-dd-surface/60 p-3 mb-2">`;
+        html += `<div class="flex items-center gap-2 mb-1.5">`;
+        html += `<a href="${isDone ? '/archive' : '/investigation/' + t.key}" class="font-mono text-sm font-semibold text-dd-purple-light hover:text-white transition-colors">${esc(t.key)}</a>`;
+        html += `<span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${statusBg} ${statusColor}">${esc(t.jira_status)}</span>`;
+        if (isDone) html += `<svg class="w-3.5 h-3.5 text-dd-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+        if (t.assignees && t.assignees.length) {
+            html += `<span class="text-[10px] text-dd-text-dim ml-auto">${esc(t.assignees.join(', '))}</span>`;
+        }
+        html += `</div>`;
+        if (t.summary) html += `<div class="text-xs text-dd-text-muted mb-1.5 leading-snug">${esc(t.summary)}</div>`;
+        if (t.updated) html += `<div class="text-[10px] text-dd-text-dim mb-1.5">Updated ${esc(t.updated)}</div>`;
+        // Last comments
+        if (t.last_comments && t.last_comments.length > 0) {
+            html += `<div class="border-t border-dd-border/40 pt-1.5 mt-1.5 space-y-1.5">`;
+            t.last_comments.forEach(c => {
+                html += `<div class="text-xs"><span class="font-medium text-dd-text-muted">${esc(c.author)}</span> <span class="text-dd-text-dim">${esc(c.date)}</span>`;
+                html += `<div class="text-dd-text-dim leading-snug mt-0.5" style="max-height:60px;overflow:hidden">${esc(c.body)}</div></div>`;
+            });
+            html += `</div>`;
+        }
+        html += `</div>`;
+        return html;
+    }
+
+    // ── Sync with JIRA ──
+    function runSync() {
+        const btn = document.getElementById('sync-btn');
+        const banner = document.getElementById('sync-banner');
+        const resultsEl = document.getElementById('sync-results');
+
+        btn.disabled = true;
+        btn.classList.add('opacity-60', 'pointer-events-none');
+        btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Checking JIRA...`;
+
+        fetch('/api/sync/preview')
+            .then(r => r.json())
+            .then(preview => {
+                const doneCount = preview.would_archive ? preview.would_archive.length : 0;
+
+                if (doneCount === 0) {
+                    // No archiving needed, just show status update
+                    banner.classList.remove('hidden', 'border-dd-green', 'border-red-500');
+                    banner.classList.add('border-dd-blue');
+                    let html = `<div class="font-medium text-white mb-2">All ${preview.checked} tickets still active in JIRA</div>`;
+                    if (preview.still_active && preview.still_active.length > 0) {
+                        preview.still_active.forEach(t => { html += renderTicketCard(t, false); });
+                    }
+                    resultsEl.innerHTML = html;
+                    resetBtn();
+                    return;
+                }
+
+                // There are done tickets, archive them
+                btn.innerHTML = `<svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Archiving ${doneCount}...`;
+
+                fetch('/api/sync', { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        banner.classList.remove('hidden', 'border-dd-blue', 'border-red-500');
+                        banner.classList.add('border-dd-green');
+
+                        let html = '';
+
+                        // Archived tickets with context
+                        if (data.archived && data.archived.length > 0) {
+                            html += `<div class="font-medium text-white mb-2">Archived ${data.archived.length} done ticket${data.archived.length !== 1 ? 's' : ''}</div>`;
+                            data.archived.forEach(t => { html += renderTicketCard(t, true); });
+                        }
+
+                        // Still active tickets with context
+                        if (data.still_active && data.still_active.length > 0) {
+                            html += `<div class="font-medium text-white mt-4 mb-2">${data.still_active.length} still active</div>`;
+                            data.still_active.forEach(t => { html += renderTicketCard(t, false); });
+                        }
+
+                        // Errors
+                        if (data.errors && data.errors.length > 0) {
+                            html += `<div class="text-xs text-red-400 mt-3">`;
+                            data.errors.forEach(e => { html += `<div>${esc(e.key)}: ${esc(e.error)}</div>`; });
+                            html += `</div>`;
+                        }
+
+                        resultsEl.innerHTML = html;
+                        resetBtn();
+
+                        if (data.archived && data.archived.length > 0) {
+                            setTimeout(() => location.reload(), 4000);
+                        }
+                    })
+                    .catch(err => {
+                        showError(err.message);
+                        resetBtn();
+                    });
+            })
+            .catch(err => {
+                showError(err.message);
+                resetBtn();
+            });
+
+        function showError(msg) {
+            banner.classList.remove('hidden', 'border-dd-green', 'border-dd-blue');
+            banner.classList.add('border-red-500');
+            resultsEl.innerHTML = `<div class="text-red-400">Could not reach JIRA: ${esc(msg)}</div>`;
+        }
+
+        function resetBtn() {
+            btn.disabled = false;
+            btn.classList.remove('opacity-60', 'pointer-events-none');
+            btn.innerHTML = `<svg id="sync-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg> Sync with JIRA`;
+        }
+    }
+
+    // ── Live Reload: watch for new/removed investigation folders ──
+    (function() {
+        let evtSource = null;
+        function connect() {
+            if (evtSource) evtSource.close();
+            evtSource = new EventSource('/api/investigations/watch');
+            evtSource.onmessage = function(e) {
+                try {
+                    const evt = JSON.parse(e.data);
+                    if (evt.type === 'changed') {
+                        // Show a brief toast then reload
+                        const toast = document.createElement('div');
+                        toast.className = 'fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 bg-dd-purple/90 text-white text-sm font-medium rounded-xl shadow-lg backdrop-blur-sm border border-dd-purple-light/20 animate-in';
+                        toast.innerHTML = `
+                            <svg class="w-4 h-4 text-dd-purple-light flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                            Investigations updated, reloading...`;
+                        document.body.appendChild(toast);
+                        setTimeout(() => location.reload(), 1000);
+                    }
+                } catch (err) {}
+            };
+            evtSource.onerror = function() {
+                evtSource.close();
+                setTimeout(connect, 5000);
+            };
+        }
+        connect();
+        window.addEventListener('beforeunload', function() { if (evtSource) evtSource.close(); });
+    })();
+</script>
+{% endblock %}

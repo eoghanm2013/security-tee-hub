@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }} - Docs - TEE Hub{% endblock %}
+
+{% block content %}
+<div class="animate-in">
+    <!-- Sticky Header -->
+    <div class="sticky top-0 z-10 bg-dd-bg/80 backdrop-blur-lg border-b border-dd-border">
+        <div class="max-w-5xl mx-auto px-8 py-3">
+            <div class="flex items-center gap-2 text-sm">
+                <a href="/docs" class="text-dd-text-dim hover:text-dd-text-muted transition-colors">Docs</a>
+                {% for part in doc_path.split('/')[:-1] %}
+                <svg class="w-3.5 h-3.5 text-dd-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                <span class="text-dd-text-dim capitalize">{{ part }}</span>
+                {% endfor %}
+                <svg class="w-3.5 h-3.5 text-dd-text-dim" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                <span class="text-white font-medium">{{ doc.title }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto px-8 py-6">
+        <div class="card p-0 overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-3 border-b border-dd-border bg-dd-surface-2/30">
+                <span class="text-xs text-dd-text-dim font-mono">{{ doc.path }}</span>
+                <span class="text-xs text-dd-text-dim">{{ doc.modified.strftime('%b %d, %Y') }}</span>
+            </div>
+            <div class="px-8 py-6">
+                <div class="md-content max-w-none">{{ doc.html|safe }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
