@@ -2,6 +2,8 @@
 
 > Local web UI for browsing investigations, archived tickets, and docs. Optional AI chat built in.
 
+![TEE Hub - Investigation Detail](static/images/screenshot.png)
+
 ---
 
 **Quick Start**
