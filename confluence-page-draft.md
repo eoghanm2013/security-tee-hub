@@ -1,10 +1,10 @@
 # Security TEE Hub
 
-A Cursor workspace that connects to JIRA, Confluence, and GitHub via MCP -- so you can investigate security escalations without switching between browser tabs.
+A Cursor workspace that connects to JIRA, Confluence, GitHub, and Glean via MCP -- so you can investigate security escalations without switching between browser tabs.
 
 ---
 
-## Setup (5 minutes)
+## Setup (2 minutes)
 
 ### 1. Clone and open in Cursor
 
@@ -14,27 +14,17 @@ git clone git@github.com:DataDog/security-tee-hub.git
 
 Open the folder in [Cursor](https://cursor.com).
 
-### 2. Configure credentials
+### 2. Tell Cursor: "Set me up"
 
-```bash
-cp .env.example .env
-cp .cursor/mcp.json.example .cursor/mcp.json
-```
+That's it. The setup script configures everything:
 
-Edit both files with your details:
+- **Atlassian** (JIRA + Confluence) -- uses SSO, no token needed
+- **Glean** (Slack, internal docs) -- uses SSO, no token needed
+- **GitHub** (optional) -- needs a [PAT](https://github.com/settings/tokens?type=beta) with Contents + Metadata read; authorize SSO for DataDog org
 
-- **Atlassian token** -- create one at [id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
-- **GitHub token** (optional) -- create a [fine-grained PAT](https://github.com/settings/tokens?type=beta) with Contents + Metadata read; authorize SSO for DataDog org
+### 3. Restart Cursor
 
-### 3. Install uv (MCP server runner)
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-### 4. Restart Cursor
-
-Quit completely (Cmd+Q), reopen. MCP only loads on startup.
+Quit completely (Cmd+Q), reopen. Atlassian and Glean will prompt a one-time SSO login on first use.
 
 Test it: *"Use MCP to fetch JIRA ticket SCRS-1885"*
 
@@ -48,15 +38,10 @@ Test it: *"Use MCP to fetch JIRA ticket SCRS-1885"*
 | Search past escalations | "Search JIRA for CSPM false positive issues" |
 | Find internal docs | "Search Confluence for agent flare troubleshooting" |
 | Search code | "Search GitHub for this error in DataDog/datadog-agent" |
+| Search everything | "Search Glean for recent security product updates" |
 | Draft a TEE response | "Draft a response for this investigation" |
 | Check similar cases | "Search the archive for similar issues" |
 | Archive done tickets | "Archive this investigation" |
-
----
-
-## Local Web UI
-
-Run `./app/run.sh` to launch a browser-based dashboard for browsing investigations, archive, and docs. Entirely optional -- the workspace works fully through Cursor alone.
 
 ---
 
@@ -64,9 +49,8 @@ Run `./app/run.sh` to launch a browser-based dashboard for browsing investigatio
 
 | Problem | Fix |
 |---------|-----|
-| "I don't have access to JIRA" | Check your Atlassian token in `.cursor/mcp.json`, restart Cursor |
-| "uvx not found" | Run the install command above, then `source ~/.zshrc` |
-| GitHub not working | Token expired -- regenerate and update `.cursor/mcp.json` |
+| "I don't have access to JIRA" | Restart Cursor (Cmd+Q), SSO will re-prompt |
+| GitHub not working | Token expired -- tell Cursor "reconfigure my workspace" |
 | Cursor slow on first open | Wait for indexing to finish |
 
 For anything else: tell Cursor *"Help me troubleshoot my MCP setup"*
