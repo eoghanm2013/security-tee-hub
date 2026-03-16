@@ -9,7 +9,7 @@ A Cursor workspace that connects to JIRA, Confluence, GitHub, and Glean via MCP 
 ### 1. Clone and open in Cursor
 
 ```
-git clone git@github.com:DataDog/security-tee-hub.git
+git clone https://github.com/eoghanm2013/security-tee-hub.git
 ```
 
 Open the folder in [Cursor](https://cursor.com).
@@ -60,5 +60,4 @@ For anything else: tell Cursor *"Help me troubleshoot my MCP setup"*
 ## Need help?
 
 - Ask Cursor -- it knows how the workspace works
-- Slack: #tee-security
-- Repo: [github.com/DataDog/security-tee-hub](https://github.com/DataDog/security-tee-hub)
+- Message Eoghan on Slack
